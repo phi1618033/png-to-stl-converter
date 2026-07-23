@@ -43,6 +43,16 @@ export default function App() {
   const [magnetOffsetX, setMagnetOffsetX] = useState(0);
   const [magnetOffsetY, setMagnetOffsetY] = useState(0);
   
+  // Scene Controls
+  const [sceneControlsOpen, setSceneControlsOpen] = useState(false);
+  const [matRoughness, setMatRoughness] = useState(0.28);
+  const [matMetalness, setMatMetalness] = useState(0.0);
+  const [matClearcoat, setMatClearcoat] = useState(0.0);
+  const [matSheen, setMatSheen] = useState(0.3);
+  const [lightAmbient, setLightAmbient] = useState(0.3);
+  const [lightDirectional, setLightDirectional] = useState(1.6);
+  const [lightRectArea, setLightRectArea] = useState(6.8);
+  
   const [isProcessing, setIsProcessing] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -114,7 +124,8 @@ export default function App() {
         { 
           depth, dpi, textureMap, baseColor, 
           bevelEnabled, topOnlyBevel, bevelThickness, bevelSize, bevelOffset, bevelSegments,
-          magnetEnabled, magnetDiameter, magnetDepth, magnetOffsetX, magnetOffsetY
+          magnetEnabled, magnetDiameter, magnetDepth, magnetOffsetX, magnetOffsetY,
+          matRoughness, matMetalness, matClearcoat, matSheen
         }
       );
       
@@ -139,7 +150,8 @@ export default function App() {
   }, [
     svgData, textureMap, depth, dpi, baseColor, image, 
     bevelEnabled, topOnlyBevel, bevelThickness, bevelSize, bevelOffset, bevelSegments,
-    magnetEnabled, magnetDiameter, magnetDepth, magnetOffsetX, magnetOffsetY
+    magnetEnabled, magnetDiameter, magnetDepth, magnetOffsetX, magnetOffsetY,
+    matRoughness, matMetalness, matClearcoat, matSheen
   ]);
 
   const handleExport = () => {
@@ -224,7 +236,87 @@ export default function App() {
           )}
           
           {mesh ? (
-            <Preview3D mesh={mesh} />
+            <>
+              <Preview3D 
+                mesh={mesh} 
+                ambientIntensity={lightAmbient} 
+                directionalIntensity={lightDirectional} 
+                rectAreaIntensity={lightRectArea}
+              />
+              
+              {/* Scene Controls Overlay */}
+              <div style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.5)', width: '280px', zIndex: 10 }}>
+                <div 
+                  onClick={() => setSceneControlsOpen(!sceneControlsOpen)}
+                  style={{ padding: '0.75rem 1rem', cursor: 'pointer', background: 'rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: '600', color: 'var(--text-primary)' }}
+                >
+                  Scene & Materials
+                  <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>{sceneControlsOpen ? '▼' : '▲'}</span>
+                </div>
+                
+                {sceneControlsOpen && (
+                  <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '400px', overflowY: 'auto' }}>
+                    <div className="control-group" style={{ marginBottom: 0 }}>
+                      <div className="control-header">
+                        <label className="control-label">Roughness</label>
+                        <span className="control-value">{matRoughness.toFixed(2)}</span>
+                      </div>
+                      <input type="range" min="0" max="1" step="0.01" value={matRoughness} onChange={(e) => setMatRoughness(parseFloat(e.target.value))} style={{ width: '100%' }} />
+                    </div>
+                    
+                    <div className="control-group" style={{ marginBottom: 0 }}>
+                      <div className="control-header">
+                        <label className="control-label">Metalness</label>
+                        <span className="control-value">{matMetalness.toFixed(2)}</span>
+                      </div>
+                      <input type="range" min="0" max="1" step="0.01" value={matMetalness} onChange={(e) => setMatMetalness(parseFloat(e.target.value))} style={{ width: '100%' }} />
+                    </div>
+
+                    <div className="control-group" style={{ marginBottom: 0 }}>
+                      <div className="control-header">
+                        <label className="control-label">Clearcoat</label>
+                        <span className="control-value">{matClearcoat.toFixed(2)}</span>
+                      </div>
+                      <input type="range" min="0" max="1" step="0.01" value={matClearcoat} onChange={(e) => setMatClearcoat(parseFloat(e.target.value))} style={{ width: '100%' }} />
+                    </div>
+
+                    <div className="control-group" style={{ marginBottom: 0 }}>
+                      <div className="control-header">
+                        <label className="control-label">Sheen</label>
+                        <span className="control-value">{matSheen.toFixed(2)}</span>
+                      </div>
+                      <input type="range" min="0" max="1" step="0.01" value={matSheen} onChange={(e) => setMatSheen(parseFloat(e.target.value))} style={{ width: '100%' }} />
+                    </div>
+
+                    <div style={{ height: '1px', background: 'var(--border-color)', margin: '0.5rem 0' }}></div>
+
+                    <div className="control-group" style={{ marginBottom: 0 }}>
+                      <div className="control-header">
+                        <label className="control-label">Ambient Light</label>
+                        <span className="control-value">{lightAmbient.toFixed(1)}</span>
+                      </div>
+                      <input type="range" min="0" max="3" step="0.1" value={lightAmbient} onChange={(e) => setLightAmbient(parseFloat(e.target.value))} style={{ width: '100%' }} />
+                    </div>
+
+                    <div className="control-group" style={{ marginBottom: 0 }}>
+                      <div className="control-header">
+                        <label className="control-label">Directional Light</label>
+                        <span className="control-value">{lightDirectional.toFixed(1)}</span>
+                      </div>
+                      <input type="range" min="0" max="5" step="0.1" value={lightDirectional} onChange={(e) => setLightDirectional(parseFloat(e.target.value))} style={{ width: '100%' }} />
+                    </div>
+
+                    <div className="control-group" style={{ marginBottom: 0 }}>
+                      <div className="control-header">
+                        <label className="control-label">RectArea Light</label>
+                        <span className="control-value">{lightRectArea.toFixed(1)}</span>
+                      </div>
+                      <input type="range" min="0" max="20" step="0.1" value={lightRectArea} onChange={(e) => setLightRectArea(parseFloat(e.target.value))} style={{ width: '100%' }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
           ) : (
             <div className="empty-state">
               <Layers size={64} />

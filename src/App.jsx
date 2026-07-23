@@ -52,6 +52,9 @@ export default function App() {
   const [lightAmbient, setLightAmbient] = useState(0.3);
   const [lightDirectional, setLightDirectional] = useState(1.6);
   const [lightRectArea, setLightRectArea] = useState(6.8);
+  const [floatDistance, setFloatDistance] = useState(2.0);
+  const [shadowOpacity, setShadowOpacity] = useState(0.8);
+  const [shadowRadius, setShadowRadius] = useState(25.0);
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -242,6 +245,9 @@ export default function App() {
                 ambientIntensity={lightAmbient} 
                 directionalIntensity={lightDirectional} 
                 rectAreaIntensity={lightRectArea}
+                floatDistance={floatDistance}
+                shadowOpacity={shadowOpacity}
+                shadowRadius={shadowRadius}
               />
               
               {/* Scene Controls Overlay */}
@@ -312,6 +318,32 @@ export default function App() {
                         <span className="control-value">{lightRectArea.toFixed(1)}</span>
                       </div>
                       <input type="range" min="0" max="20" step="0.1" value={lightRectArea} onChange={(e) => setLightRectArea(parseFloat(e.target.value))} style={{ width: '100%' }} />
+                    </div>
+
+                    <div style={{ height: '1px', background: 'var(--border-color)', margin: '0.5rem 0' }}></div>
+
+                    <div className="control-group" style={{ marginBottom: 0 }}>
+                      <div className="control-header">
+                        <label className="control-label">Float Distance</label>
+                        <span className="control-value">{floatDistance.toFixed(1)} mm</span>
+                      </div>
+                      <input type="range" min="0" max="20" step="0.1" value={floatDistance} onChange={(e) => setFloatDistance(parseFloat(e.target.value))} style={{ width: '100%' }} />
+                    </div>
+
+                    <div className="control-group" style={{ marginBottom: 0 }}>
+                      <div className="control-header">
+                        <label className="control-label">Shadow Opacity</label>
+                        <span className="control-value">{shadowOpacity.toFixed(2)}</span>
+                      </div>
+                      <input type="range" min="0" max="1" step="0.01" value={shadowOpacity} onChange={(e) => setShadowOpacity(parseFloat(e.target.value))} style={{ width: '100%' }} />
+                    </div>
+
+                    <div className="control-group" style={{ marginBottom: 0 }}>
+                      <div className="control-header">
+                        <label className="control-label">Shadow Blur</label>
+                        <span className="control-value">{shadowRadius.toFixed(1)}</span>
+                      </div>
+                      <input type="range" min="0" max="25" step="0.1" value={shadowRadius} onChange={(e) => setShadowRadius(parseFloat(e.target.value))} style={{ width: '100%' }} />
                     </div>
                   </div>
                 )}

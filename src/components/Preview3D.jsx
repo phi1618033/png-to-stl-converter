@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
 
-export default function Preview3D({ mesh, ambientIntensity = 0.8, directionalIntensity = 1.5, rectAreaIntensity = 5.0 }) {
+export default function Preview3D({ mesh, ambientIntensity = 0.8, directionalIntensity = 1.5, rectAreaIntensity = 5.0, floatDistance = 1.0, shadowOpacity = 0.8, shadowRadius = 2.0 }) {
   const containerRef = useRef(null);
   const rendererRef = useRef(null);
   const sceneRef = useRef(null);
@@ -13,6 +13,7 @@ export default function Preview3D({ mesh, ambientIntensity = 0.8, directionalInt
   const ambientLightRef = useRef(null);
   const directionalLightRef = useRef(null);
   const rectLightRef = useRef(null);
+  const shadowPlaneMatRef = useRef(null);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -32,7 +33,20 @@ export default function Preview3D({ mesh, ambientIntensity = 0.8, directionalInt
     scene.add(hemiLight);
 
     const directionalLight = new THREE.DirectionalLight(0xffffff, directionalIntensity);
-    directionalLight.position.set(10, 20, 10);
+    directionalLight.position.set(0, 100, 0);
+    directionalLight.castShadow = true;
+    directionalLight.shadow.mapSize.width = 2048;
+    directionalLight.shadow.mapSize.height = 2048;
+    directionalLight.shadow.camera.near = 0.5;
+    directionalLight.shadow.camera.far = 500;
+    directionalLight.shadow.camera.left = -200;
+    directionalLight.shadow.camera.right = 200;
+    directionalLight.shadow.camera.top = 200;
+    directionalLight.shadow.camera.bottom = -200;
+    directionalLight.shadow.bias = -0.0005;
+    directionalLight.shadow.radius = shadowRadius;
+    directionalLight.shadow.blurSamples = 25;
+    directionalLight.shadow.camera.updateProjectionMatrix();
     scene.add(directionalLight);
     directionalLightRef.current = directionalLight;
 
@@ -56,6 +70,17 @@ export default function Preview3D({ mesh, ambientIntensity = 0.8, directionalInt
     gridHelper.position.y = 0; // Grid is exactly at Y=0
     scene.add(gridHelper);
 
+    // Add invisible plane to receive shadows
+    const shadowPlaneGeo = new THREE.PlaneGeometry(10000, 10000);
+    const shadowPlaneMat = new THREE.ShadowMaterial({ opacity: shadowOpacity });
+    shadowPlaneMatRef.current = shadowPlaneMat;
+    const shadowPlane = new THREE.Mesh(shadowPlaneGeo, shadowPlaneMat);
+    shadowPlane.name = 'shadowPlane';
+    shadowPlane.rotation.x = -Math.PI / 2;
+    shadowPlane.position.y = 0;
+    shadowPlane.receiveShadow = true;
+    scene.add(shadowPlane);
+
     // Initialize camera
     const width = container.clientWidth;
     const height = container.clientHeight;
@@ -68,6 +93,8 @@ export default function Preview3D({ mesh, ambientIntensity = 0.8, directionalInt
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(width, height);
     renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.VSMShadowMap;
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
@@ -116,21 +143,39 @@ export default function Preview3D({ mesh, ambientIntensity = 0.8, directionalInt
     }
     if (directionalLightRef.current) {
       directionalLightRef.current.intensity = directionalIntensity;
+      directionalLightRef.current.shadow.radius = shadowRadius;
     }
     if (rectLightRef.current) {
       rectLightRef.current.intensity = rectAreaIntensity;
     }
-  }, [ambientIntensity, directionalIntensity, rectAreaIntensity]);
+    if (shadowPlaneMatRef.current) {
+      shadowPlaneMatRef.current.opacity = shadowOpacity;
+    }
+  }, [ambientIntensity, directionalIntensity, rectAreaIntensity, shadowOpacity, shadowRadius]);
+
+  // Update object height dynamically
+  useEffect(() => {
+    if (mesh) {
+      mesh.position.y = floatDistance;
+    }
+  }, [mesh, floatDistance]);
 
   // Update mesh when it changes
   useEffect(() => {
     if (!sceneRef.current || !mesh) return;
 
     // Remove existing meshes
-    const objectsToRemove = sceneRef.current.children.filter(child => child.isMesh);
+    const objectsToRemove = sceneRef.current.children.filter(child => child.isMesh && child.name !== 'shadowPlane');
     objectsToRemove.forEach(obj => sceneRef.current.remove(obj));
 
     // Add new mesh
+    mesh.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+    mesh.position.y = floatDistance; // Float above the grid
     sceneRef.current.add(mesh);
 
     // Adjust camera to fit mesh

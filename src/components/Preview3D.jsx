@@ -1,14 +1,18 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
 
-export default function Preview3D({ mesh }) {
+export default function Preview3D({ mesh, ambientIntensity = 0.8, directionalIntensity = 1.5, rectAreaIntensity = 5.0 }) {
   const containerRef = useRef(null);
   const rendererRef = useRef(null);
   const sceneRef = useRef(null);
   const cameraRef = useRef(null);
   const controlsRef = useRef(null);
   const lastRadiusRef = useRef(null);
+  const ambientLightRef = useRef(null);
+  const directionalLightRef = useRef(null);
+  const rectLightRef = useRef(null);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -19,16 +23,27 @@ export default function Preview3D({ mesh }) {
     sceneRef.current = scene;
 
     // Add lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+    const ambientLight = new THREE.AmbientLight(0xffffff, ambientIntensity);
     scene.add(ambientLight);
+    ambientLightRef.current = ambientLight;
 
     const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.8);
     hemiLight.position.set(0, 20, 0);
     scene.add(hemiLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, directionalIntensity);
     directionalLight.position.set(10, 20, 10);
     scene.add(directionalLight);
+    directionalLightRef.current = directionalLight;
+
+    // Add thin RectAreaLight for reflections
+    RectAreaLightUniformsLib.init();
+    const rectLight = new THREE.RectAreaLight(0xffffff, rectAreaIntensity, 400, 10);
+    // Bring it much closer to the object to cast a sharp reflection
+    rectLight.position.set(0, 30, -30);
+    rectLight.lookAt(0, 0, 0);
+    scene.add(rectLight);
+    rectLightRef.current = rectLight;
 
     const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.5);
     directionalLight2.position.set(-10, -20, -10);
@@ -93,6 +108,19 @@ export default function Preview3D({ mesh }) {
       renderer.dispose();
     };
   }, []);
+
+  // Update light intensities dynamically
+  useEffect(() => {
+    if (ambientLightRef.current) {
+      ambientLightRef.current.intensity = ambientIntensity;
+    }
+    if (directionalLightRef.current) {
+      directionalLightRef.current.intensity = directionalIntensity;
+    }
+    if (rectLightRef.current) {
+      rectLightRef.current.intensity = rectAreaIntensity;
+    }
+  }, [ambientIntensity, directionalIntensity, rectAreaIntensity]);
 
   // Update mesh when it changes
   useEffect(() => {

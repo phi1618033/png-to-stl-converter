@@ -170,13 +170,32 @@ export const buildGeometryFromSVG = (svgString, imageWidth, imageHeight, options
   const materials = [];
   
   if (textureMap) {
-    materials.push(new THREE.MeshStandardMaterial({ map: textureMap, color: 0xffffff, roughness: 0.5 }));
+    materials.push(new THREE.MeshPhysicalMaterial({ 
+      map: textureMap, 
+      color: 0xffffff, 
+      roughness: options.matRoughness ?? 0.5,
+      metalness: options.matMetalness ?? 0.1,
+      clearcoat: options.matClearcoat ?? 0.0,
+      sheen: options.matSheen ?? 0.0
+    }));
   } else {
-    materials.push(new THREE.MeshStandardMaterial({ color: options.baseColor || 0xcccccc, roughness: 0.5 }));
+    materials.push(new THREE.MeshPhysicalMaterial({ 
+      color: options.baseColor || 0xcccccc, 
+      roughness: options.matRoughness ?? 0.5,
+      metalness: options.matMetalness ?? 0.1,
+      clearcoat: options.matClearcoat ?? 0.0,
+      sheen: options.matSheen ?? 0.0
+    }));
   }
   
   // Side material (uses solid color, ignores UVs)
-  materials.push(new THREE.MeshStandardMaterial({ color: options.baseColor || 0x999999, roughness: 0.7 }));
+  materials.push(new THREE.MeshPhysicalMaterial({ 
+    color: options.baseColor || 0x999999, 
+    roughness: options.matRoughness ?? 0.7,
+    metalness: options.matMetalness ?? 0.1,
+    clearcoat: options.matClearcoat ?? 0.0,
+    sheen: options.matSheen ?? 0.0
+  }));
 
   let mesh = new THREE.Mesh(geometry, materials);
   mesh.updateMatrixWorld();
